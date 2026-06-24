@@ -3,102 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>静态网站集合</title>
+<title>Static Site - 工具集合</title>
 <style>
   :root {
-    --bg: #f8fafc;
+    --bg: #fafafa;
     --card-bg: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --border: #e2e8f0;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --text-primary: #171717;
+    --text-secondary: #525252;
+    --accent: #0a0a0a;
+    --border: #e5e5e5;
+    --hover-bg: #f5f5f5;
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    -webkit-font-smoothing: antialiased;
   }
 
   .container {
-    max-width: 1200px;
+    max-width: 960px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 4rem 2rem;
     flex: 1;
+    width: 100%;
   }
 
   header {
-    text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 4rem;
   }
 
   h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
+    font-size: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.75rem;
   }
 
   .subtitle {
     font-size: 1.125rem;
     color: var(--text-secondary);
+    font-weight: 400;
   }
 
-  .tools-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .tool-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow);
+  .tools-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
   }
 
-  .tool-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-color: var(--accent);
+  .tool-item {
+    background: var(--card-bg);
+    padding: 1.5rem 2rem;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .tool-item:hover {
+    background: var(--hover-bg);
   }
 
   .tool-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: white;
+    font-size: 1.75rem;
+    flex-shrink: 0;
+    width: 3rem;
+    text-align: center;
+  }
+
+  .tool-content {
+    flex: 1;
+    min-width: 0;
   }
 
   .tool-title {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 600;
-    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
   }
 
   .tool-description {
@@ -107,68 +103,107 @@
     line-height: 1.5;
   }
 
-  .tool-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--accent);
-    margin-top: auto;
+  .tool-arrow {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
   }
 
-  .tool-link::after {
-    content: '→';
-    transition: transform 0.2s ease;
-  }
-
-  .tool-card:hover .tool-link::after {
-    transform: translateX(4px);
+  .tool-item:hover .tool-arrow {
+    opacity: 1;
+    transform: translateX(0);
   }
 
   footer {
-    text-align: center;
     padding: 2rem;
+    text-align: center;
     color: var(--text-secondary);
     font-size: 0.875rem;
     border-top: 1px solid var(--border);
   }
 
+  footer a {
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s ease;
+  }
+
+  footer a:hover {
+    border-bottom-color: var(--text-primary);
+  }
+
   @media (max-width: 640px) {
-    h1 {
-      font-size: 2rem;
-    }
-
-    .container {
-      padding: 1.5rem 1rem;
-    }
-
-    .tools-grid {
-      grid-template-columns: 1fr;
-    }
+    .container { padding: 2.5rem 1.25rem; }
+    h1 { font-size: 1.75rem; }
+    .tool-item { padding: 1.25rem 1.5rem; gap: 1rem; }
+    .tool-icon { font-size: 1.5rem; width: 2.5rem; }
+    .tool-title { font-size: 1rem; }
+    .tool-description { font-size: 0.875rem; }
   }
 </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🛠️ 静态网站集合</h1>
+      <h1>Static Site</h1>
+      <p class="subtitle">实用工具与计算器集合</p>
     </header>
 
-    <section class="tools-grid">
-      <a href="shelf-calculator.html" class="tool-card">
-        <div class="tool-icon">📐</div>
-        <h2 class="tool-title">货架DIY计算器</h2>
-        <p class="tool-description">
-          在线计算货架尺寸、材料用量和成本，帮助你快速规划货架搭建方案。
-        </p>
-        <span class="tool-link">开始使用</span>
-      </a>
-    </section>
+    <nav class="tools-list" id="toolsList"></nav>
   </div>
 
   <footer>
-    <p>&copy; 2026 Static Site | <a href="https://github.com/3223219370/static-site" style="color: var(--accent); text-decoration: none;">GitHub</a></p>
+    <p>&copy; 2026 Static Site · <a href="https://github.com/3223219370/static-site">GitHub</a></p>
   </footer>
+
+  <script>
+    /**
+     * 工具配置数据
+     * 新增工具只需在此数组中添加一项即可
+     */
+    const TOOLS = [
+      {
+        id: 'shelf-calculator',
+        title: '货架DIY计算器',
+        description: '在线计算货架尺寸、材料用量和成本，帮助你快速规划货架搭建方案。',
+        icon: '📐',
+        url: 'shelf-calculator.html'
+      }
+    ];
+
+    /**
+     * 渲染工具列表
+     */
+    function renderTools() {
+      const container = document.getElementById('toolsList');
+      const fragment = document.createDocumentFragment();
+
+      TOOLS.forEach(tool => {
+        const link = document.createElement('a');
+        link.className = 'tool-item';
+        link.href = tool.url;
+        link.setAttribute('aria-label', tool.title);
+
+        link.innerHTML = `
+          <span class="tool-icon" aria-hidden="true">${tool.icon}</span>
+          <div class="tool-content">
+            <div class="tool-title">${tool.title}</div>
+            <div class="tool-description">${tool.description}</div>
+          </div>
+          <span class="tool-arrow" aria-hidden="true">→</span>
+        `;
+
+        fragment.appendChild(link);
+      });
+
+      container.appendChild(fragment);
+    }
+
+    renderTools();
+  </script>
 </body>
 </html>

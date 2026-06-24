@@ -49,7 +49,7 @@
     padding: 0.6rem 0.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     display: flex; flex-direction: column;
   }
-  .card.flex-card { flex: 1; min-height: 0; }
+  .card.flex-card { flex: 1; min-height: 0; overflow: hidden; }
   .card-title {
     font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;
     display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;
@@ -70,6 +70,16 @@
     border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.08);
   }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .input-row-single { display: grid; grid-template-columns: 1fr; gap: 0.4rem; }
+  .layer-info {
+    font-size: 0.65rem; color: var(--accent); margin-top: 0.2rem;
+    padding: 0.25rem 0.4rem; background: rgba(59,130,246,0.06);
+    border-radius: 4px; line-height: 1.5; word-break: break-all;
+  }
+  input[readonly] {
+    background: #f8fafc !important; color: var(--text-secondary) !important;
+    cursor: not-allowed; border-color: #e2e8f0 !important;
+  }
   .price-item {
     display: grid; grid-template-columns: 1fr auto auto; gap: 0.35rem;
     align-items: end; padding: 0.35rem 0; border-bottom: 1px solid #f1f5f9;
@@ -100,7 +110,7 @@
   .unit-hint { font-size: 0.58rem; color: var(--text-secondary); margin-left: 0.15rem; }
 
   /* 右侧表格 */
-  .result-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  .result-scroll { flex: 1; }
   .result-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
   .result-table th {
     text-align: left; padding: 0.3rem 0.2rem; border-bottom: 2px solid var(--border);
@@ -120,9 +130,22 @@
   }
   .total-row .price { color: var(--success); font-size: 0.95rem; }
 
+  .section-divider {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-top: 0.5rem; margin-bottom: 0.3rem; flex-shrink: 0;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .section-divider span {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
   .svg-container {
     flex: 1; display: flex; justify-content: center; align-items: center;
-    background: #fafbfc; border-radius: 6px; border: 1px dashed var(--border); min-height: 0;
+    background: #fafbfc; border-radius: 6px; border: 1px dashed var(--border);
+    min-height: 0; min-width: 0; overflow: hidden;
   }
   svg { max-width: 100%; max-height: 100%; }
 </style>
@@ -153,7 +176,13 @@
           <div class="form-group">
             <label>层数</label>
             <input type="number" id="layers" value="10" min="1" max="50" step="1">
-            <div class="hint-text" id="layerHint"></div>
+          </div>
+        </div>
+        <div class="layer-info" id="layerHint"></div>
+        <div class="input-row-single" style="margin-top:0.3rem;">
+          <div class="form-group">
+            <label>每层层高 <span class="unit-hint">(cm)</span></label>
+            <input type="number" id="layerHeight" readonly tabindex="-1">
           </div>
         </div>
       </div>
@@ -229,11 +258,6 @@
           </div>
         </div>
       </div>
-
-      <div class="card flex-card">
-        <div class="card-title">45° 结构示意图</div>
-        <div class="svg-container" id="svgContainer"></div>
-      </div>
     </div>
 
     <!-- 右列 -->
@@ -254,6 +278,10 @@
             <tbody id="resultBody"></tbody>
           </table>
         </div>
+        <div class="section-divider">
+          <span>45° 结构示意图</span>
+        </div>
+        <div class="svg-container" id="svgContainer"></div>
       </div>
     </div>
   </div>
@@ -275,6 +303,8 @@ function calc() {
   const W = getVal('width');
   const H = getVal('height');
   const N = Math.max(1, Math.floor(getVal('layers')));
+  const layerH = N > 0 ? H / N : 0;
+  document.getElementById('layerHeight').value = layerH.toFixed(2);
   const pIron = getVal('priceIron');
   const pScrew = getVal('priceScrew');
   const screwPP = Math.max(1, Math.floor(getVal('screwPerPack')));
@@ -287,14 +317,15 @@ function calc() {
   const pNet = getVal('priceNet');
 
   // 层数提示
+  const beamGroups = N > 1 ? N - 1 : 0;
   document.getElementById('layerHint').textContent =
-    `${N}层 → ${N}组横框(每组2长梁+2短梁) + ${N}个层板平面`;
+    `${N}层 × ${layerH}cm/层 → ${beamGroups}组横框(每组2长梁+2短梁) + ${N}个层板平面（底层无横梁）`;
 
   // === 三角铁明细 ===
   const postCount = 4;
   const postLenCm = H;
-  const beamLongCount = N * 2;
-  const beamShortCount = N * 2;
+  const beamLongCount = beamGroups * 2;
+  const beamShortCount = beamGroups * 2;
   const totalIronCm = postCount * postLenCm + beamLongCount * L + beamShortCount * W;
   const totalIronM = totalIronCm / 100;
   const ironCost = totalIronM * pIron;
@@ -306,12 +337,12 @@ function calc() {
   const screwCost = screwPacks * pScrew;
 
   // === 三角片 ===
-  const triCount = N * 8;
+  const triCount = beamGroups * 8;
   const triPacks = Math.ceil(triCount / triPP);
   const triCost = triPacks * pTri;
 
   // === 扎带 ===
-  const tieCount = N * 16;
+  const tieCount = beamGroups * 16;
   const tiePacks = Math.ceil(tieCount / tiePP);
   const tieCost = tiePacks * pTie;
 
@@ -341,12 +372,12 @@ function calc() {
   // 三角片
   const triUnitPrice = triPP > 0 ? (pTri / triPP).toFixed(4) : '0';
   html += row('三角片', `${triCount}个 (${triPacks}包)`, '个', `¥${triUnitPrice}/个`, triCost);
-  html += detailRow(`计算方式`, `${N}层 × 8个/层`, '');
+  html += detailRow(`计算方式`, `${beamGroups}组横框 × 8个/组`, '');
 
   // 扎带
   const tieUnitPrice = tiePP > 0 ? (pTie / tiePP).toFixed(4) : '0';
   html += row('扎带', `${tieCount}条 (${tiePacks}包)`, '条', `¥${tieUnitPrice}/条`, tieCost);
-  html += detailRow(`计算方式`, `${N}层 × 16条/层`, '');
+  html += detailRow(`计算方式`, `${beamGroups}组横框 × 16条/组`, '');
 
   // 防护网
   html += row('防护网', `${N}层`, '层', `¥${netCostPerLayer.toFixed(2)}/层`, netTotalCost);
@@ -417,7 +448,8 @@ function drawSVG(L, W, H, N) {
       lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${sw}" opacity="0.8"/>`;
     }
   }
-  for (let i = 0; i <= N; i++) {
+  // 底层(i=0)无横梁，只绘制 i=1 到 N 的横梁
+  for (let i = 1; i <= N; i++) {
     const z = (H / N) * i;
     const pts = corners.map(([cx,cy]) => project(cx, cy, z));
     for (let j = 0; j < 4; j++) {
