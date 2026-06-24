@@ -268,11 +268,12 @@
           <table class="result-table">
             <thead>
               <tr>
-                <th style="width:22%">材料</th>
-                <th class="num" style="width:18%">用量</th>
-                <th class="num" style="width:12%">单位</th>
-                <th class="num" style="width:18%">单价</th>
-                <th class="price" style="width:30%">费用(元)</th>
+                <th style="width:18%">材料</th>
+                <th class="num" style="width:16%">用量</th>
+                <th class="num" style="width:10%">单位</th>
+                <th class="num" style="width:16%">单价</th>
+                <th class="price" style="width:22%">费用(元)</th>
+                <th class="num" style="width:18%">使用情况</th>
               </tr>
             </thead>
             <tbody id="resultBody"></tbody>
@@ -346,48 +347,55 @@ function calc() {
   const tiePacks = Math.ceil(tieCount / tiePP);
   const tieCost = tiePacks * pTie;
 
-  // === 防护网 ===
+  // === 防护网（按整张购买） ===
   const baseArea = netBL * netBW;
   const layerArea = L * W;
-  const netCostPerLayer = baseArea > 0 ? (layerArea / baseArea) * pNet : 0;
-  const netTotalCost = N * netCostPerLayer;
+  const netCountPerLayer = baseArea > 0 ? layerArea / baseArea : 0;
+  const netTotalCount = N * netCountPerLayer;
+  const netPacks = Math.ceil(netTotalCount);
+  const netTotalCost = netPacks * pNet;
 
   const total = ironCost + screwCost + triCost + tieCost + netTotalCost;
+
+  // === 使用情况计算 ===
+  function packUsage(needCount, packCount, perPack) {
+    const bought = packCount * perPack;
+    if (bought === needCount) return '正好用完';
+    return `剩余${bought - needCount}个`;
+  }
 
   // 构建明细HTML
   let html = '';
 
-  // 三角铁汇总
-  html += row('三角铁（汇总）', totalIronM.toFixed(2), '米', `¥${pIron.toFixed(2)}/米`, ironCost);
+  // 三角铁汇总（按米购买，无整包概念）
+  html += row('三角铁（汇总）', totalIronM.toFixed(2), '米', `¥${pIron.toFixed(2)}/米`, ironCost, '—');
   // 三角铁明细
   html += detailRow(`立柱三角铁`, `${postCount}段 × ${postLenCm}cm`, `${(postCount * postLenCm / 100).toFixed(2)}米`);
   html += detailRow(`长边横梁`, `${beamLongCount}段 × ${L}cm`, `${(beamLongCount * L / 100).toFixed(2)}米`);
   html += detailRow(`短边横梁`, `${beamShortCount}段 × ${W}cm`, `${(beamShortCount * W / 100).toFixed(2)}米`);
 
   // 螺丝
-  const screwUnitPrice = screwPP > 0 ? (pScrew / screwPP).toFixed(4) : '0';
-  html += row('螺丝', `${screwCount}个 (${screwPacks}包)`, '个', `¥${screwUnitPrice}/个`, screwCost);
+  html += row('螺丝', `${screwCount}个 (${screwPacks}包)`, '包', `¥${pScrew.toFixed(2)}/包`, screwCost, packUsage(screwCount, screwPacks, screwPP));
   html += detailRow(`计算方式`, `${totalSegments}段三角铁 × 3颗/段`, '');
 
   // 三角片
-  const triUnitPrice = triPP > 0 ? (pTri / triPP).toFixed(4) : '0';
-  html += row('三角片', `${triCount}个 (${triPacks}包)`, '个', `¥${triUnitPrice}/个`, triCost);
+  html += row('三角片', `${triCount}个 (${triPacks}包)`, '包', `¥${pTri.toFixed(2)}/包`, triCost, packUsage(triCount, triPacks, triPP));
   html += detailRow(`计算方式`, `${beamGroups}组横框 × 8个/组`, '');
 
   // 扎带
-  const tieUnitPrice = tiePP > 0 ? (pTie / tiePP).toFixed(4) : '0';
-  html += row('扎带', `${tieCount}条 (${tiePacks}包)`, '条', `¥${tieUnitPrice}/条`, tieCost);
+  html += row('扎带', `${tieCount}条 (${tiePacks}包)`, '包', `¥${pTie.toFixed(2)}/包`, tieCost, packUsage(tieCount, tiePacks, tiePP));
   html += detailRow(`计算方式`, `${beamGroups}组横框 × 16条/组`, '');
 
   // 防护网
-  html += row('防护网', `${N}层`, '层', `¥${netCostPerLayer.toFixed(2)}/层`, netTotalCost);
+  const netUsageText = netPacks === netTotalCount ? '正好用完' : `剩余${(netPacks - netTotalCount).toFixed(2)}张的面积`;
+  html += row('防护网', `需${netTotalCount.toFixed(2)}张 (${netPacks}整张)`, '张', `¥${pNet.toFixed(2)}/张`, netTotalCost, netUsageText);
   html += detailRow(`单层面积`, `${L}×${W} = ${layerArea}cm²`, '');
   html += detailRow(`基准面积`, `${netBL}×${netBW} = ${baseArea}cm²`, '');
-  html += detailRow(`换算公式`, `(${layerArea}/${baseArea}) × ¥${pNet.toFixed(2)}`, `¥${netCostPerLayer.toFixed(2)}`);
+  html += detailRow(`单层需网`, `(${layerArea}/${baseArea}) = ${netCountPerLayer.toFixed(2)}张`, '');
 
   // 总计
   html += `<tr class="total-row">
-    <td colspan="4">总计</td>
+    <td colspan="5">总计</td>
     <td class="price">¥${total.toFixed(2)}</td>
   </tr>`;
 
@@ -395,23 +403,26 @@ function calc() {
   drawSVG(L, W, H, N);
 }
 
-function row(name, qty, unit, priceLabel, cost) {
+function row(name, qty, unit, priceLabel, cost, usage) {
   return `<tr>
     <td>${name}</td>
     <td class="num">${qty}</td>
     <td class="num">${unit}</td>
     <td class="num">${priceLabel}</td>
     <td class="price">${cost.toFixed(2)}</td>
+    <td class="num">${usage || ''}</td>
   </tr>`;
 }
 
-function detailRow(label, desc, val) {
+function detailRow(label, desc, val, usage) {
   return `<tr class="detail-row">
     <td>${label}</td>
     <td class="num" colspan="3">${desc}</td>
     <td class="num">${val}</td>
+    <td class="num">${usage || ''}</td>
   </tr>`;
 }
+
 
 function drawSVG(L, W, H, N) {
   const ax = 0.7, ay = 0.35, bx = -0.7, by = 0.35;
