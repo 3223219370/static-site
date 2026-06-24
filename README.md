@@ -8,7 +8,7 @@
 
 ## 🚀 访问地址
 
-https://3223219370.github.io/static-site
+https://3223219370.github.io/static-site/index.html
 
 ## 📁 项目结构
 
