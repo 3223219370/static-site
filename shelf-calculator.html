@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>货架DIY计算器</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1a202c;
+    --text-secondary: #64748b;
+    --accent: #3b82f6;
+    --success: #10b981;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+    height: 100vh;
+    overflow: hidden;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .container {
+    width: 100%; max-width: 1280px; margin: 0 auto;
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+  }
+  h1 {
+    font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;
+    text-align: center; letter-spacing: -0.02em; flex-shrink: 0;
+  }
+  .main-grid {
+    display: grid; grid-template-columns: 340px 1fr; gap: 0.75rem;
+    flex: 1; min-height: 0;
+  }
+  @media (max-width: 860px) {
+    .main-grid { grid-template-columns: 1fr; }
+    body { overflow: auto; height: auto; }
+  }
+  .left-col { display: flex; flex-direction: column; gap: 0.6rem; min-height: 0; }
+  .right-col { display: flex; flex-direction: column; min-height: 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.6rem 0.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    display: flex; flex-direction: column;
+  }
+  .card.flex-card { flex: 1; min-height: 0; }
+  .card-title {
+    font-size: 0.8rem; font-weight: 600; margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;
+  }
+  .card-title::before {
+    content: ''; width: 3px; height: 11px; background: var(--accent); border-radius: 2px;
+  }
+  .form-group { margin-bottom: 0.3rem; }
+  label {
+    display: block; font-size: 0.65rem; font-weight: 500;
+    color: var(--text-secondary); margin-bottom: 0.1rem;
+  }
+  input[type="number"] {
+    width: 100%; padding: 0.25rem 0.45rem; border: 1px solid var(--border);
+    border-radius: 5px; font-size: 0.78rem; outline: none; transition: border-color 0.15s;
+  }
+  input[type="number"]:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.08);
+  }
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .price-item {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 0.35rem;
+    align-items: end; padding: 0.35rem 0; border-bottom: 1px solid #f1f5f9;
+  }
+  .price-item:last-child { border-bottom: none; }
+  .price-item .item-label {
+    font-size: 0.72rem; font-weight: 600; color: var(--text);
+    padding-bottom: 0.28rem; white-space: nowrap;
+  }
+  .price-item .field { display: flex; flex-direction: column; min-width: 70px; }
+  .price-item .field label { margin-bottom: 0.08rem; }
+  .price-item .field input { text-align: right; }
+  .price-item-single {
+    display: grid; grid-template-columns: 1fr auto; gap: 0.35rem;
+    align-items: end; padding: 0.35rem 0; border-bottom: 1px solid #f1f5f9;
+  }
+  .price-item-single:last-child { border-bottom: none; }
+  .price-item-single .item-label {
+    font-size: 0.72rem; font-weight: 600; color: var(--text);
+    padding-bottom: 0.28rem; white-space: nowrap;
+  }
+  .price-item-single .field { display: flex; flex-direction: column; min-width: 80px; }
+  .price-item-single .field label { margin-bottom: 0.08rem; }
+  .price-item-single .field input { text-align: right; }
+  .hint-text {
+    font-size: 0.6rem; color: var(--accent); margin-top: 0.15rem; font-weight: 500;
+  }
+  .unit-hint { font-size: 0.58rem; color: var(--text-secondary); margin-left: 0.15rem; }
+
+  /* 右侧表格 */
+  .result-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  .result-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  .result-table th {
+    text-align: left; padding: 0.3rem 0.2rem; border-bottom: 2px solid var(--border);
+    color: var(--text-secondary); font-weight: 600; font-size: 0.62rem;
+    text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0;
+    background: var(--card); z-index: 1;
+  }
+  .result-table td { padding: 0.3rem 0.2rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .result-table tr:last-child td { border-bottom: none; }
+  .result-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .result-table .price { text-align: right; font-weight: 600; color: var(--accent); }
+  .detail-row td { padding: 0.15rem 0.2rem 0.15rem 1.2rem; font-size: 0.68rem; color: var(--text-secondary); border-bottom: 1px dashed #f0f0f0; }
+  .detail-row td.num { font-weight: 500; color: var(--text); }
+  .total-row td {
+    border-top: 2px solid var(--text) !important; border-bottom: none !important;
+    padding-top: 0.4rem !important; font-weight: 700; font-size: 0.88rem;
+  }
+  .total-row .price { color: var(--success); font-size: 0.95rem; }
+
+  .svg-container {
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    background: #fafbfc; border-radius: 6px; border: 1px dashed var(--border); min-height: 0;
+  }
+  svg { max-width: 100%; max-height: 100%; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔧 货架DIY用料计算器</h1>
+  <div class="main-grid">
+    <!-- 左列 -->
+    <div class="left-col">
+      <div class="card">
+        <div class="card-title">架子尺寸</div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>长度 <span class="unit-hint">(cm)</span></label>
+            <input type="number" id="length" value="60" min="10" step="1">
+          </div>
+          <div class="form-group">
+            <label>宽度 <span class="unit-hint">(cm)</span></label>
+            <input type="number" id="width" value="30" min="10" step="1">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label>高度 <span class="unit-hint">(cm)</span></label>
+            <input type="number" id="height" value="200" min="10" step="1">
+          </div>
+          <div class="form-group">
+            <label>层数</label>
+            <input type="number" id="layers" value="10" min="1" max="50" step="1">
+            <div class="hint-text" id="layerHint"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">价格清单</div>
+
+        <!-- 角铁架（仅单价） -->
+        <div class="price-item-single">
+          <div class="item-label">角铁架</div>
+          <div class="field">
+            <label>元/米</label>
+            <input type="number" id="priceIron" value="1.75" min="0" step="0.01">
+          </div>
+        </div>
+
+        <!-- 螺丝（单价 + 每包数量） -->
+        <div class="price-item">
+          <div class="item-label">螺丝</div>
+          <div class="field">
+            <label>元/包</label>
+            <input type="number" id="priceScrew" value="8.2" min="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>个/包</label>
+            <input type="number" id="screwPerPack" value="100" min="1" step="1">
+          </div>
+        </div>
+
+        <!-- 三角片（单价 + 每包数量） -->
+        <div class="price-item">
+          <div class="item-label">三角片</div>
+          <div class="field">
+            <label>元/包</label>
+            <input type="number" id="priceTriangle" value="7.87" min="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>个/包</label>
+            <input type="number" id="triPerPack" value="48" min="1" step="1">
+          </div>
+        </div>
+
+        <!-- 扎带（单价 + 每包数量） -->
+        <div class="price-item">
+          <div class="item-label">扎带</div>
+          <div class="field">
+            <label>元/包</label>
+            <input type="number" id="priceTie" value="1" min="0" step="0.01">
+          </div>
+          <div class="field">
+            <label>条/包</label>
+            <input type="number" id="tiePerPack" value="100" min="1" step="1">
+          </div>
+        </div>
+
+        <!-- 防护网（基准长 + 基准宽 + 单价） -->
+        <div class="price-item">
+          <div class="item-label">防护网</div>
+          <div class="field">
+            <label>基准长(cm)</label>
+            <input type="number" id="netBaseLen" value="300" min="1" step="1">
+          </div>
+          <div class="field">
+            <label>基准宽(cm)</label>
+            <input type="number" id="netBaseWid" value="30" min="1" step="1">
+          </div>
+        </div>
+        <div class="price-item-single" style="border-bottom:none; padding-top:0;">
+          <div class="item-label"></div>
+          <div class="field">
+            <label>单价(元)</label>
+            <input type="number" id="priceNet" value="5.71" min="0" step="0.01">
+          </div>
+        </div>
+      </div>
+
+      <div class="card flex-card">
+        <div class="card-title">45° 结构示意图</div>
+        <div class="svg-container" id="svgContainer"></div>
+      </div>
+    </div>
+
+    <!-- 右列 -->
+    <div class="right-col">
+      <div class="card flex-card">
+        <div class="card-title">用料明细 & 费用</div>
+        <div class="result-scroll">
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th style="width:22%">材料</th>
+                <th class="num" style="width:18%">用量</th>
+                <th class="num" style="width:12%">单位</th>
+                <th class="num" style="width:18%">单价</th>
+                <th class="price" style="width:30%">费用(元)</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_IDS = [
+  'length','width','height','layers',
+  'priceIron','priceScrew','screwPerPack',
+  'priceTriangle','triPerPack',
+  'priceTie','tiePerPack',
+  'netBaseLen','netBaseWid','priceNet'
+];
+
+function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function calc() {
+  const L = getVal('length');
+  const W = getVal('width');
+  const H = getVal('height');
+  const N = Math.max(1, Math.floor(getVal('layers')));
+  const pIron = getVal('priceIron');
+  const pScrew = getVal('priceScrew');
+  const screwPP = Math.max(1, Math.floor(getVal('screwPerPack')));
+  const pTri = getVal('priceTriangle');
+  const triPP = Math.max(1, Math.floor(getVal('triPerPack')));
+  const pTie = getVal('priceTie');
+  const tiePP = Math.max(1, Math.floor(getVal('tiePerPack')));
+  const netBL = getVal('netBaseLen');
+  const netBW = getVal('netBaseWid');
+  const pNet = getVal('priceNet');
+
+  // 层数提示
+  document.getElementById('layerHint').textContent =
+    `${N}层 → ${N}组横框(每组4根横梁) + ${(N+1)}层横框平面`;
+
+  // === 三角铁明细 ===
+  const postCount = 4;
+  const postLenCm = H;
+  const beamLongCount = N * 2;
+  const beamShortCount = N * 2;
+  const totalIronCm = postCount * postLenCm + beamLongCount * L + beamShortCount * W;
+  const totalIronM = totalIronCm / 100;
+  const ironCost = totalIronM * pIron;
+  const totalSegments = postCount + beamLongCount + beamShortCount;
+
+  // === 螺丝 ===
+  const screwCount = totalSegments * 3;
+  const screwPacks = Math.ceil(screwCount / screwPP);
+  const screwCost = screwPacks * pScrew;
+
+  // === 三角片 ===
+  const triCount = N * 8;
+  const triPacks = Math.ceil(triCount / triPP);
+  const triCost = triPacks * pTri;
+
+  // === 扎带 ===
+  const tieCount = N * 16;
+  const tiePacks = Math.ceil(tieCount / tiePP);
+  const tieCost = tiePacks * pTie;
+
+  // === 防护网 ===
+  const baseArea = netBL * netBW;
+  const layerArea = L * W;
+  const netCostPerLayer = baseArea > 0 ? (layerArea / baseArea) * pNet : 0;
+  const netTotalCost = N * netCostPerLayer;
+
+  const total = ironCost + screwCost + triCost + tieCost + netTotalCost;
+
+  // 构建明细HTML
+  let html = '';
+
+  // 三角铁汇总
+  html += row('三角铁（汇总）', totalIronM.toFixed(2), '米', `¥${pIron.toFixed(2)}/米`, ironCost);
+  // 三角铁明细
+  html += detailRow(`立柱三角铁`, `${postCount}段 × ${postLenCm}cm`, `${(postCount * postLenCm / 100).toFixed(2)}米`);
+  html += detailRow(`长边横梁`, `${beamLongCount}段 × ${L}cm`, `${(beamLongCount * L / 100).toFixed(2)}米`);
+  html += detailRow(`短边横梁`, `${beamShortCount}段 × ${W}cm`, `${(beamShortCount * W / 100).toFixed(2)}米`);
+
+  // 螺丝
+  const screwUnitPrice = screwPP > 0 ? (pScrew / screwPP).toFixed(4) : '0';
+  html += row('螺丝', `${screwCount}个 (${screwPacks}包)`, '个', `¥${screwUnitPrice}/个`, screwCost);
+  html += detailRow(`计算方式`, `${totalSegments}段三角铁 × 3颗/段`, '');
+
+  // 三角片
+  const triUnitPrice = triPP > 0 ? (pTri / triPP).toFixed(4) : '0';
+  html += row('三角片', `${triCount}个 (${triPacks}包)`, '个', `¥${triUnitPrice}/个`, triCost);
+  html += detailRow(`计算方式`, `${N}层 × 8个/层`, '');
+
+  // 扎带
+  const tieUnitPrice = tiePP > 0 ? (pTie / tiePP).toFixed(4) : '0';
+  html += row('扎带', `${tieCount}条 (${tiePacks}包)`, '条', `¥${tieUnitPrice}/条`, tieCost);
+  html += detailRow(`计算方式`, `${N}层 × 16条/层`, '');
+
+  // 防护网
+  html += row('防护网', `${N}层`, '层', `¥${netCostPerLayer.toFixed(2)}/层`, netTotalCost);
+  html += detailRow(`单层面积`, `${L}×${W} = ${layerArea}cm²`, '');
+  html += detailRow(`基准面积`, `${netBL}×${netBW} = ${baseArea}cm²`, '');
+  html += detailRow(`换算公式`, `(${layerArea}/${baseArea}) × ¥${pNet.toFixed(2)}`, `¥${netCostPerLayer.toFixed(2)}`);
+
+  // 总计
+  html += `<tr class="total-row">
+    <td colspan="4">总计</td>
+    <td class="price">¥${total.toFixed(2)}</td>
+  </tr>`;
+
+  document.getElementById('resultBody').innerHTML = html;
+  drawSVG(L, W, H, N);
+}
+
+function row(name, qty, unit, priceLabel, cost) {
+  return `<tr>
+    <td>${name}</td>
+    <td class="num">${qty}</td>
+    <td class="num">${unit}</td>
+    <td class="num">${priceLabel}</td>
+    <td class="price">${cost.toFixed(2)}</td>
+  </tr>`;
+}
+
+function detailRow(label, desc, val) {
+  return `<tr class="detail-row">
+    <td>${label}</td>
+    <td class="num" colspan="3">${desc}</td>
+    <td class="num">${val}</td>
+  </tr>`;
+}
+
+function drawSVG(L, W, H, N) {
+  const ax = 0.7, ay = 0.35, bx = -0.7, by = 0.35;
+  function rawProject(x, y, z) {
+    return [x * ax + y * bx, -z + (x * ay + y * by)];
+  }
+  const corners = [[0,0],[L,0],[L,W],[0,W]];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [cx, cy] of corners) {
+    for (const off of [-1.5, 1.5]) {
+      for (const zz of [0, H]) {
+        const [px, py] = rawProject(cx + off, cy + off, zz);
+        minX = Math.min(minX, px); maxX = Math.max(maxX, px);
+        minY = Math.min(minY, py); maxY = Math.max(maxY, py);
+      }
+    }
+  }
+  const pad = 25;
+  const cw = maxX - minX + pad * 2;
+  const ch = maxY - minY + pad * 2;
+  const s = Math.max(Math.min(380 / cw, 280 / ch), 0.1);
+  const ox = -minX * s + pad;
+  const oy = -minY * s + pad;
+  function project(x, y, z) {
+    const [px, py] = rawProject(x, y, z);
+    return [px * s + ox, py * s + oy];
+  }
+  let lines = '';
+  const stroke = '#475569', sw = 1.2;
+  for (const [cx, cy] of corners) {
+    for (const off of [-1.5, 1.5]) {
+      const [x1,y1] = project(cx+off, cy+off, 0);
+      const [x2,y2] = project(cx+off, cy+off, H);
+      lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${sw}" opacity="0.8"/>`;
+    }
+  }
+  for (let i = 0; i <= N; i++) {
+    const z = (H / N) * i;
+    const pts = corners.map(([cx,cy]) => project(cx, cy, z));
+    for (let j = 0; j < 4; j++) {
+      const [x1,y1] = pts[j];
+      const [x2,y2] = pts[(j+1)%4];
+      lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="${sw}" opacity="0.6"/>`;
+    }
+  }
+  const [p0x,p0y] = project(0,0,0);
+  const [pLx,pLy] = project(L,0,0);
+  const [pWx,pWy] = project(0,W,0);
+  const [pHx,pHy] = project(0,0,H);
+  const fs = 9;
+  let labels = '';
+  labels += `<text x="${(p0x+pLx)/2}" y="${p0y+16}" text-anchor="middle" font-size="${fs}" fill="#64748b">${L}cm</text>`;
+  labels += `<text x="${p0x-10}" y="${(p0y+pWy)/2}" text-anchor="end" font-size="${fs}" fill="#64748b">${W}cm</text>`;
+  labels += `<text x="${p0x-10}" y="${(p0y+pHy)/2}" text-anchor="end" font-size="${fs}" fill="#64748b">${H}cm</text>`;
+  const vbW = Math.ceil(cw * s + pad * 2);
+  const vbH = Math.ceil(ch * s + pad * 2);
+  document.getElementById('svgContainer').innerHTML =
+    `<svg viewBox="0 0 ${vbW} ${vbH}" xmlns="http://www.w3.org/2000/svg">${lines}${labels}</svg>`;
+}
+
+for (const id of ALL_IDS) {
+  document.getElementById(id).addEventListener('input', calc);
+}
+calc();
+</script>
+</body>
+</html>
