@@ -317,9 +317,9 @@ function calc() {
   const pNet = getVal('priceNet');
 
   // 层数提示
-  const beamGroups = N > 1 ? N - 1 : 0;
+  const beamGroups = N;
   document.getElementById('layerHint').textContent =
-    `${N}层 × ${layerH}cm/层 → ${beamGroups}组横框(每组2长梁+2短梁) + ${N}个层板平面（底层无横梁）`;
+    `${N}层 × ${layerH}cm/层 → ${beamGroups}组横框(每组2长梁+2短梁)，底层放地面无横梁，顶层有横框支撑`;
 
   // === 三角铁明细 ===
   const postCount = 4;
