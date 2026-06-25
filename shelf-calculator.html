@@ -332,13 +332,13 @@ function calc() {
   const ironCost = totalIronM * pIron;
   const totalSegments = postCount + beamLongCount + beamShortCount;
 
-  // === 螺丝 ===
-  const screwCount = totalSegments * 3;
-  const screwPacks = Math.ceil(screwCount / screwPP);
-  const screwCost = screwPacks * pScrew;
-
   // === 三角片 ===
   const triCount = beamGroups * 8;
+
+  // === 螺丝（1个三角片配3颗螺丝） ===
+  const screwCount = triCount * 3;
+  const screwPacks = Math.ceil(screwCount / screwPP);
+  const screwCost = screwPacks * pScrew;
   const triPacks = Math.ceil(triCount / triPP);
   const triCost = triPacks * pTri;
 
@@ -376,7 +376,7 @@ function calc() {
 
   // 螺丝
   html += row('螺丝', `${screwCount}个 (${screwPacks}包)`, '包', `¥${pScrew.toFixed(2)}/包`, screwCost, packUsage(screwCount, screwPacks, screwPP));
-  html += detailRow(`计算方式`, `${totalSegments}段三角铁 × 3颗/段`, '');
+  html += detailRow(`计算方式`, `${triCount}个三角片 × 3颗/个`, '');
 
   // 三角片
   html += row('三角片', `${triCount}个 (${triPacks}包)`, '包', `¥${pTri.toFixed(2)}/包`, triCost, packUsage(triCount, triPacks, triPP));
